@@ -20,7 +20,7 @@ These writeups document real problems encountered, investigated, and resolved on
 
 | Repo | Description |
 |------|-------------|
-| [homelab-infrastructure](https://github.com/yourname/homelab-infrastructure) | Full architecture, network design, security stack, and project portfolio for the 3-node Proxmox cluster these writeups are based on |
+| [homelab-infrastructure](https://github.com/timanlemvo/Alliance-homelab-infrastructure) | Full architecture, network design, security stack, and project portfolio for the 3-node Proxmox cluster these writeups are based on |
 
 ---
 
