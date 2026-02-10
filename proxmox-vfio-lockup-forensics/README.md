@@ -326,8 +326,8 @@ proxmox-vfio-lockup-forensics/
 
 | Repo | Description |
 |------|-------------|
-| [homelab-infrastructure](https://github.com/yourname/homelab-infrastructure) | Full cluster architecture, network design, security stack, and project portfolio |
-| [technical-writeups](https://github.com/yourname/technical-writeups) | Index of all technical writeups and incident documentation |
+| [TheAlliance-homelab-infrastructure](https://github.com/timanlemvo/Alliance-homelab-infrastructure) | Full cluster architecture, network design, security stack, and project portfolio |
+| [technical-writeups](https://github.com/timanlemvo/technical-writeups) | Index of all technical writeups and incident documentation |
 
 ---
 
