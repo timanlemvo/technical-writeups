@@ -6,6 +6,7 @@ category: "Infrastructure"
 tags: ["Wazuh", "SIEM", "Debian", "LXC", "Proxmox"]
 summary: "Manual Wazuh installation failed across four sequential issues. After accumulated workarounds made the system state untrustworthy, the container was destroyed and redeployed cleanly using the official script."
 ---
+
 # Wazuh SIEM Deployment on Debian 13
 
 **Category:** Infrastructure / Deployment
@@ -36,18 +37,16 @@ Manual installation of the Wazuh stack on Debian 13 failed across four sequentia
 
 ## Failure Timeline
 
-### Failure 1 — DNS Resolution During Package Install
+### Failure 1: DNS Resolution During Package Install
 
 `apt-get` operations against `packages.wazuh.com` failed intermittently. Other containers on VLAN 20 resolved the same domain without issues.
-
 ```bash
 apt-get install wazuh-indexer
 # Err:1 https://packages.wazuh.com/4.x/apt stable/main amd64 wazuh-indexer amd64 4.x.x
 # Could not resolve 'packages.wazuh.com'
 ```
 
-Checked `/etc/resolv.conf` — correct nameserver entries. Tested direct resolution:
-
+Checked `/etc/resolv.conf` (correct nameserver entries). Tested direct resolution:
 ```bash
 dig packages.wazuh.com @192.168.20.x
 # intermittently failing
@@ -59,10 +58,9 @@ Workaround: added the Wazuh repo IP directly to `/etc/hosts` to bypass DNS for t
 
 ---
 
-### Failure 2 — Filebeat Crashing on Start
+### Failure 2: Filebeat Crashing on Start
 
 After the indexer and manager came up, filebeat crashed immediately on every start.
-
 ```bash
 systemctl start filebeat
 systemctl status filebeat
@@ -74,7 +72,6 @@ journalctl -u filebeat -n 50 --no-pager
 ```
 
 Verified the indexer was actually responding:
-
 ```bash
 curl -k -u admin:admin https://127.0.0.1:9200
 # {"name":"node-1","cluster_name":"wazuh-cluster"...}
@@ -83,7 +80,6 @@ curl -k -u admin:admin https://127.0.0.1:9200
 Indexer fine. Reviewed `/etc/filebeat/filebeat.yml` and found two certificate path references that didn't match what was actually on disk. Fixed both. Filebeat still crashed. Adjusted timeout values. No change.
 
 Temporary workaround: wrote a Python script to read alert output and POST directly to the indexer API so the dashboard could start populating while investigation continued.
-
 ```python
 import requests, json, time
 
@@ -112,10 +108,9 @@ This ran in a tmux session. No error handling, no retry logic, not a production 
 
 ---
 
-### Failure 3 — Certificate Path Mismatches
+### Failure 3: Certificate Path Mismatches
 
 The dashboard was logging TLS verification failures against the indexer.
-
 ```bash
 ls -la /etc/wazuh-indexer/certs/
 # admin.pem, admin-key.pem, root-ca.pem, node.pem, node-key.pem
@@ -130,9 +125,9 @@ Attempted fix: symlinked all cert directories to `/etc/wazuh-certs/`. Some servi
 
 ---
 
-### Failure 4 — Dashboard Stuck Loading
+### Failure 4: Dashboard Stuck Loading
 
-Dashboard reachable at `https://192.168.20.30` but stuck on an infinite loading spinner. Downstream effect of the filebeat failure — no events reaching the indexer means nothing for the dashboard to display.
+Dashboard reachable at `https://192.168.20.30` but stuck on an infinite loading spinner. Downstream effect of the filebeat failure (no events reaching the indexer means nothing for the dashboard to display).
 
 ---
 
@@ -147,7 +142,6 @@ At this point the container had accumulated:
 - No clean record of what had changed from defaults
 
 Continuing meant debugging an unknown starting state. The right call was to start clean.
-
 ```bash
 pct stop 110
 pct destroy 110
@@ -158,7 +152,6 @@ A new LXC 110 was provisioned from a clean Debian 13 template.
 ---
 
 ## Successful Deployment
-
 ```bash
 bash <(curl -s https://packages.wazuh.com/4.x/wazuh-install.sh)
 ```
@@ -168,7 +161,6 @@ All three components came up in correct order with certs generated and placed au
 ---
 
 ## Agent Deployment
-
 ```bash
 #!/bin/bash
 MANAGER_IP="192.168.20.30"
@@ -200,9 +192,9 @@ Run as root on any Debian/Ubuntu host.
 
 ---
 
-## Lessons Learned
+## Takeaways
 
-Use the script when the goal is a working system, not an educational exercise. The manual path exists to understand the components — it's not the right tool for getting Wazuh operational on Debian 13.
+Use the script when the goal is a working system, not an educational exercise. The manual path exists to understand the components. It's not the right tool for getting Wazuh operational on Debian 13.
 
 Know when the system state is no longer trustworthy. The signal is when you can no longer accurately describe what the system's configuration actually is. Three overlapping partial fixes crossed that line here.
 
@@ -218,14 +210,14 @@ Destroying and rebuilding LXC 110 took five minutes. The prior two hours produce
 |-----------|--------|
 | Wazuh Manager | Operational |
 | Wazuh Indexer | Operational |
-| Wazuh Dashboard | Operational — `https://192.168.20.30` |
+| Wazuh Dashboard | Operational (`https://192.168.20.30`) |
 | Agent collection | All enrolled hosts reporting |
 | File integrity monitoring | Active |
-| Active response (automated blocking) | Pending — UniFi API integration |
+| Active response (automated blocking) | Pending (UniFi API integration) |
 
 ---
 
 ## Related
 
-- [proxmox-vfio-lockup-forensics](../proxmox-vfio-lockup-forensics/) — FCM2250 agent was enrolled before the VFIO lockup incident
+- [proxmox-vfio-lockup-forensics](../proxmox-vfio-lockup-forensics/)
 - [Alliance Homelab Infrastructure](https://github.com/timanlemvo/Alliance-homelab-infrastructure)
