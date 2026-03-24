@@ -1,3 +1,11 @@
+---
+title: "Diagnosing a Silent Hard Lockup on a Proxmox VFIO Passthrough Node"
+date: 2026-02-09
+featured: true
+category: "Incident Response"
+tags: ["Linux Kernel", "InfluxDB/Flux", "PCIe/IOMMU", "Corosync", "Postmortem"]
+summary: "Node-A suffered a complete hard lockup with zero local crash artifacts. Used external telemetry to trace root cause to a PCIe bus stall from an NVIDIA GPU under VFIO passthrough."
+---
 # Diagnosing a Silent Hard Lockup on a Proxmox VFIO Node Using Only External Telemetry
 
 **Category:** Incident Forensics
