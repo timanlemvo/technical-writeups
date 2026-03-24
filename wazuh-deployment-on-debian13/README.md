@@ -1,3 +1,11 @@
+---
+title: "Wazuh SIEM Deployment on Debian 13"
+date: 2026-02-01
+featured: true
+category: "Infrastructure"
+tags: ["Wazuh", "SIEM", "Debian", "LXC", "Proxmox"]
+summary: "Manual Wazuh installation failed across four sequential issues. After accumulated workarounds made the system state untrustworthy, the container was destroyed and redeployed cleanly using the official script."
+---
 # Wazuh SIEM Deployment on Debian 13
 
 **Category:** Infrastructure / Deployment
