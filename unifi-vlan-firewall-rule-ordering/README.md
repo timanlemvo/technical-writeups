@@ -1,3 +1,11 @@
+---
+title: "UniFi Firewall Rule Ordering: Inter-VLAN Access Blocked Despite Permit Rules"
+date: 2026-02-01
+featured: false
+category: "Networking"
+tags: ["UniFi", "Firewall", "VLAN", "Proxmox", "NPM"]
+summary: "Nginx Proxy Manager was unreachable across VLANs despite existing permit rules. Root cause: those rules had high index numbers and were evaluated after an earlier deny. Fix was creating explicit low-index bidirectional allow rules."
+---
 # UniFi Firewall Rule Ordering — Inter-VLAN Access Blocked Despite Permit Rules
 
 **Category:** Networking / Firewall
