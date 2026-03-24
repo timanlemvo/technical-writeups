@@ -1,4 +1,13 @@
-# Grafana OAuth SSO Failure — redirect_uri_mismatch from Unconfigured root_url
+---
+title: "Grafana OAuth SSO Failure: redirect_uri_mismatch from Unconfigured root_url"
+date: 2026-02-01
+featured: false
+category: "Identity"
+tags: ["Grafana", "Authentik", "OAuth", "SSO", "Alpine Linux"]
+summary: "Grafana SSO with Authentik failed with redirect_uri_mismatch despite correct config. Root cause: Grafana builds redirect URIs from root_url in the [server] section, which was commented out and defaulting to localhost."
+---
+
+# Grafana OAuth SSO Failure: redirect_uri_mismatch from Unconfigured root_url
 
 **Category:** Identity / SSO
 **Environment:** Grafana on Alpine Linux, Authentik
@@ -28,7 +37,6 @@ Grafana SSO with Authentik failed with `redirect_uri_mismatch` despite the redir
 ## Authentik Provider Configuration
 
 In the Authentik admin panel under Applications, Providers, create OAuth2/OpenID Provider:
-
 ```
 Type:          OAuth2/OpenID Provider
 Name:          Grafana OAuth Provider
@@ -39,7 +47,6 @@ Redirect URI:  http://192.168.20.40:3000/login/generic_oauth
 ```
 
 Create an Application binding the provider:
-
 ```
 Name:     Grafana
 Slug:     grafana
@@ -51,7 +58,6 @@ Provider: Grafana OAuth Provider
 ## Grafana OAuth Configuration
 
 Added to `/etc/grafana/grafana.ini`:
-
 ```ini
 [auth.generic_oauth]
 enabled = true
@@ -64,7 +70,6 @@ auth_url = http://192.168.20.10:9000/application/o/authorize/
 token_url = http://192.168.20.10:9000/application/o/token/
 api_url = http://192.168.20.10:9000/application/o/userinfo/
 ```
-
 ```bash
 rc-service grafana restart
 ```
@@ -76,7 +81,6 @@ rc-service grafana restart
 Clicking "Sign in with Authentik" on the Grafana login page redirected to Authentik correctly. Authentication and MFA completed successfully. Authentik redirected back to Grafana.
 
 Error:
-
 ```
 redirect_uri_mismatch
 
@@ -87,34 +91,31 @@ Received: http://localhost:3000/login/generic_oauth
 
 ---
 
-## Investigation
+## Timeline
 
-**Step 1 — Check both sides of the redirect URI.**
+**Step 1: Check both sides of the redirect URI.**
 
 Authentik registered URI: `http://192.168.20.40:3000/login/generic_oauth`
 
 Grafana's `[auth.generic_oauth]` section has no explicit `redirect_uri` field. Grafana builds this value at runtime. There was nothing to check in the OAuth config itself.
 
-**Step 2 — Capture what Grafana is actually sending.**
+**Step 2: Capture what Grafana is actually sending.**
 
 Browser DevTools, Network tab, clear, click "Sign in with Authentik", find the authorization redirect request to Authentik's `/application/o/authorize/` endpoint, inspect query parameters:
-
 ```
 redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Flogin%2Fgeneric_oauth
 ```
 
 Grafana was sending `localhost:3000` regardless of the registered URI. The problem was not in the OAuth config.
 
-**Step 3 — Find where Grafana constructs the redirect URI.**
+**Step 3: Find where Grafana constructs the redirect URI.**
 
 Grafana builds its redirect URI as:
-
 ```
 {root_url} + /login/generic_oauth
 ```
 
 `root_url` comes from the `[server]` section of `grafana.ini`. Checking that section:
-
 ```ini
 [server]
 ;protocol = http
@@ -128,22 +129,19 @@ Every line prefixed with `;` is a comment. `root_url` was commented out. When un
 
 ---
 
-## Fix
+## Resolution
 
 Uncomment and set `domain` and `root_url` in the `[server]` section:
-
 ```ini
 [server]
 domain = 192.168.20.40
 root_url = http://192.168.20.40:3000/
 ```
-
 ```bash
 rc-service grafana restart
 ```
 
 Re-ran the OAuth flow. DevTools now showed:
-
 ```
 redirect_uri=http%3A%2F%2F192.168.20.40%3A3000%2Flogin%2Fgeneric_oauth
 ```
@@ -153,7 +151,6 @@ Login completed. Grafana created the SSO user account. Verified under Administra
 ---
 
 ## Complete Working Configuration
-
 ```ini
 [server]
 domain = 192.168.20.40
@@ -188,7 +185,6 @@ Capturing the actual network request in DevTools is the reliable shortcut. The `
 ## Notes on Alpine Linux
 
 Alpine uses `rc-service` instead of `systemctl`. Commands that will silently fail:
-
 ```bash
 # Wrong on Alpine
 systemctl restart grafana
@@ -201,7 +197,7 @@ rc-service grafana status
 
 ---
 
-## Lessons Learned
+## Takeaways
 
 When a redirect URI mismatch error occurs and the configured values look correct, capture the actual authorization request in DevTools and read the `redirect_uri` parameter directly. That shows what the application is actually sending.
 
@@ -211,5 +207,5 @@ Grafana's `[server]` section contains commented-out defaults that are not the sa
 
 ## Related
 
-- [proxmox-vfio-lockup-forensics](../proxmox-vfio-lockup-forensics/) — Grafana was the visualization layer used during the VFIO forensic investigation
+- [proxmox-vfio-lockup-forensics](../proxmox-vfio-lockup-forensics/)
 - [Alliance Homelab Infrastructure](https://github.com/timanlemvo/Alliance-homelab-infrastructure)
